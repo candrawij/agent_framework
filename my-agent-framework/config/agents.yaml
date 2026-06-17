@@ -1,0 +1,16 @@
+﻿# Agent Configuration
+supervisor:
+  name: "Supervisor"
+  routing_mode: "keyword"  # "keyword" | "model"
+  max_iterations: 10
+
+agents:
+  - name: "ReactAgent"
+    class: "framework.agents.react_agent.ReActAgent"
+    model_profile: "fast"
+    tools: ["web_search", "file_io", "shell_command"]
+    enabled: true
+
+plugins:
+  auto_load: true
+  plugins_dir: "plugins/"

@@ -1,0 +1,10 @@
+﻿# Embedding Profile — Model untuk vector embedding
+name: embedding
+description: "Generates text embeddings for semantic search and RAG"
+adapter: ollama
+models:
+  primary: "nomic-embed-text:latest"
+  fallback: "all-minilm:latest"
+parameters:
+  batch_size: 32
+task_types: [embedding]

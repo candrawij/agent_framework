@@ -1,0 +1,13 @@
+﻿# Reasoning Profile — Model untuk analisis mendalam
+name: reasoning
+description: "Optimized for deep reasoning, reflection, complex analysis"
+adapter: ollama
+models:
+  primary: "qwen3:4b"
+  fallback: "llama3:8b"
+parameters:
+  temperature: 0.4
+  num_predict: 2048
+  num_ctx: 8192
+  top_p: 0.95
+task_types: [reasoning, reflection, merge, relationship, extract]

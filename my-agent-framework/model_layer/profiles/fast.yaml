@@ -1,0 +1,13 @@
+﻿# Fast Profile — Model cepat untuk task ringan
+name: fast
+description: "Optimized for speed: chat, greetings, simple queries"
+adapter: ollama
+models:
+  primary: "qwen2.5:3b"
+  fallback: "phi3:mini"
+parameters:
+  temperature: 0.7
+  num_predict: 512
+  num_ctx: 4096
+  top_p: 0.9
+task_types: [fast, chat, agent, greeting]

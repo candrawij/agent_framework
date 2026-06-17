@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "isi": "sedang mengerjakan fase 2 saki bot",
+    "tanggal": "2026-06-08 10:56",
+    "kategori": "umum"
+  },
+  {
+    "id": 2,
+    "isi": "halo",
+    "tanggal": "2026-06-08 11:12",
+    "kategori": "umum"
+  },
+  {
+    "id": 3,
+    "title": "test note from unit test",
+    "isi": "test note from unit test",
+    "tanggal": "2026-06-09 05:56",
+    "kategori": "umum",
+    "tags": []
+  },
+  {
+    "id": 4,
+    "title": "test dari cli",
+    "isi": "test dari cli",
+    "tanggal": "2026-06-09 06:29",
+    "kategori": "umum",
+    "tags": []
+  }
+]

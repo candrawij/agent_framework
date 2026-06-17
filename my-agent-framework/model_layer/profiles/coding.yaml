@@ -1,0 +1,12 @@
+﻿# Coding Profile — Model untuk generate dan review kode
+name: coding
+description: "Optimized for code generation, debugging, and review"
+adapter: ollama
+models:
+  primary: "qwen2.5-coder:7b"
+  fallback: "deepseek-coder:6.7b"
+parameters:
+  temperature: 0.2
+  num_predict: 4096
+  num_ctx: 16384
+task_types: [coding]

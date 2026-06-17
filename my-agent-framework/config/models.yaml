@@ -1,0 +1,16 @@
+﻿# Model Configuration
+default_adapter: ollama
+adapters:
+  ollama:
+    base_url: "http://localhost:11434"
+    timeout: 120
+    profiles:
+      fast: "qwen2.5:3b"
+      reasoning: "qwen3:4b"
+      coding: "qwen2.5-coder:7b"
+      embedding: "nomic-embed-text:latest"
+      fallback: "qwen2.5:3b"
+  openai:
+    base_url: "https://api.openai.com/v1"
+    api_key: "${OPENAI_API_KEY}"
+    model: "gpt-4o-mini"

@@ -1,0 +1,27 @@
+﻿# API Server Configuration
+host: "0.0.0.0"
+port: 8000
+debug: false
+reload: true
+workers: 1
+
+# Security
+jwt_secret: "${JWT_SECRET}"
+jwt_access_ttl: 3600
+jwt_refresh_ttl: 604800
+
+# CORS
+cors_origins:
+  - "http://localhost:3000"
+  - "http://localhost:5173"
+  - "capacitor://localhost"
+
+# Rate Limiting
+rate_limit:
+  enabled: true
+  requests_per_minute: 60
+  burst: 10
+
+# Logging
+log_level: "INFO"
+log_file: "logs/framework.log"

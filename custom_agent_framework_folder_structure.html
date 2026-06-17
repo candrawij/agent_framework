@@ -1,0 +1,373 @@
+
+<style>
+  :root { --indent: 22px; }
+  .tree { font-family: var(--font-mono); font-size: 13px; line-height: 1.65; padding: 0; }
+  .folder { cursor: pointer; user-select: none; }
+  .folder > .label:hover .name { text-decoration: underline; text-decoration-color: var(--color-border-secondary); }
+  .label { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+  .icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
+  .name { color: var(--color-text-primary); font-weight: 500; }
+  .badge { font-size: 10px; padding: 1px 6px; border-radius: 20px; font-family: var(--font-sans); font-weight: 400; margin-left: 4px; }
+  .badge.core   { background: #E6F1FB; color: #0C447C; }
+  .badge.model  { background: #EAF3DE; color: #27500A; }
+  .badge.mobile { background: #FAEEDA; color: #633806; }
+  .badge.desktop{ background: #EEEDFE; color: #3C3489; }
+  .badge.shared { background: #F1EFE8; color: #444441; }
+  @media (prefers-color-scheme: dark) {
+    .badge.core   { background: #0C447C; color: #B5D4F4; }
+    .badge.model  { background: #27500A; color: #C0DD97; }
+    .badge.mobile { background: #633806; color: #FAC775; }
+    .badge.desktop{ background: #3C3489; color: #CECBF6; }
+    .badge.shared { background: #444441; color: #D3D1C7; }
+  }
+  .file-name { color: var(--color-text-secondary); }
+  .comment { color: var(--color-text-tertiary); font-size: 11px; margin-left: 6px; font-family: var(--font-sans); font-style: italic; }
+  .children { margin-left: var(--indent); border-left: 1px solid var(--color-border-tertiary); padding-left: 12px; overflow: hidden; }
+  .children.collapsed { display: none; }
+  .chevron { color: var(--color-text-tertiary); font-size: 10px; transition: transform 0.15s; width: 10px; flex-shrink: 0; }
+  .folder.open > .label .chevron { transform: rotate(90deg); }
+
+  .section-header { margin: 18px 0 8px; padding: 6px 10px; border-radius: 6px; font-family: var(--font-sans); font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .section-header.core   { background: #E6F1FB; color: #0C447C; }
+  .section-header.model  { background: #EAF3DE; color: #27500A; }
+  .section-header.mobile { background: #FAEEDA; color: #633806; }
+  .section-header.desktop{ background: #EEEDFE; color: #3C3489; }
+  .section-header.shared { background: #F1EFE8; color: #444441; }
+  @media (prefers-color-scheme: dark) {
+    .section-header.core   { background: #042C53; color: #85B7EB; }
+    .section-header.model  { background: #173404; color: #97C459; }
+    .section-header.mobile { background: #412402; color: #EF9F27; }
+    .section-header.desktop{ background: #26215C; color: #AFA9EC; }
+    .section-header.shared { background: #2C2C2A; color: #B4B2A9; }
+  }
+
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tab { padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--color-border-tertiary); background: var(--color-background-secondary); color: var(--color-text-secondary); font-family: var(--font-sans); transition: all 0.15s; }
+  .tab:hover { border-color: var(--color-border-primary); color: var(--color-text-primary); }
+  .tab.active { border-color: transparent; color: #fff; }
+  .tab.active.core   { background: #185FA5; }
+  .tab.active.model  { background: #3B6D11; }
+  .tab.active.mobile { background: #854F0B; }
+  .tab.active.desktop{ background: #534AB7; }
+  .tab.active.all    { background: #5F5E5A; }
+  .tab.all.active    { background: #5F5E5A; }
+
+  .container { padding: 16px 20px 20px; max-width: 720px; }
+  .root-label { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--color-background-secondary); border-radius: 8px; margin-bottom: 12px; }
+  .root-label .name { font-size: 14px; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-mono); }
+  .expand-all { font-size: 11px; color: var(--color-text-tertiary); cursor: pointer; font-family: var(--font-sans); padding: 3px 8px; border: 1px solid var(--color-border-tertiary); border-radius: 4px; margin-left: auto; background: none; }
+  .expand-all:hover { color: var(--color-text-primary); border-color: var(--color-border-secondary); }
+</style>
+
+<div class="container">
+  <h2 class="sr-only">Struktur folder proyek custom agent framework</h2>
+  <div class="root-label">
+    <span style="font-size:18px">📦</span>
+    <span class="name">my-agent-framework/</span>
+    <button class="expand-all" onclick="toggleAll()">buka semua</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active all" onclick="filterSection('all', this)">Semua</div>
+    <div class="tab core" onclick="filterSection('core', this)">🧠 Framework</div>
+    <div class="tab model" onclick="filterSection('model', this)">⚙️ Model Layer</div>
+    <div class="tab mobile" onclick="filterSection('mobile', this)">📱 Mobile</div>
+    <div class="tab desktop" onclick="filterSection('desktop', this)">🖥️ Desktop</div>
+    <div class="tab shared" onclick="filterSection('shared', this)">📄 Shared</div>
+  </div>
+
+  <div class="tree" id="tree"></div>
+</div>
+
+<script>
+const data = [
+  { type: 'section', label: '🧠 Core Agent Framework', cls: 'core' },
+  { type: 'folder', name: 'framework/', section: 'core', open: true, children: [
+    { type: 'folder', name: 'agents/', open: true, children: [
+      { type: 'file', name: 'base_agent.py', comment: 'Abstract base class semua agen' },
+      { type: 'file', name: 'react_agent.py', comment: 'Implementasi ReAct loop' },
+      { type: 'file', name: 'supervisor_agent.py', comment: 'Multi-agent orchestrator' },
+      { type: 'file', name: 'agent_registry.py', comment: 'Registry & factory agen' },
+    ]},
+    { type: 'folder', name: 'loop/', open: true, children: [
+      { type: 'file', name: 'planner.py', comment: 'Task decomposition & dependency graph' },
+      { type: 'file', name: 'executor.py', comment: 'Eksekusi tool calls' },
+      { type: 'file', name: 'observer.py', comment: 'Proses hasil tool → observasi' },
+      { type: 'file', name: 'reflector.py', comment: 'Evaluasi apakah task selesai' },
+      { type: 'file', name: 'agent_loop.py', comment: 'Orchestrator utama siklus' },
+    ]},
+    { type: 'folder', name: 'tools/', open: false, children: [
+      { type: 'file', name: 'base_tool.py', comment: 'Abstract tool interface' },
+      { type: 'file', name: 'web_search.py' },
+      { type: 'file', name: 'code_executor.py', comment: 'Sandboxed Python/JS runner' },
+      { type: 'file', name: 'file_io.py', comment: 'Baca / tulis file lokal' },
+      { type: 'file', name: 'http_request.py' },
+      { type: 'file', name: 'shell_command.py' },
+      { type: 'folder', name: 'plugins/', children: [
+        { type: 'file', name: '__init__.py' },
+        { type: 'file', name: 'loader.py', comment: 'Dynamic plugin import' },
+        { type: 'file', name: 'example_plugin.py' },
+      ]},
+    ]},
+    { type: 'folder', name: 'memory/', open: false, children: [
+      { type: 'file', name: 'short_term.py', comment: 'Sliding window context' },
+      { type: 'file', name: 'long_term.py', comment: 'Vector DB retrieval (Qdrant)' },
+      { type: 'file', name: 'episodic.py', comment: 'Catatan sesi penting' },
+      { type: 'file', name: 'compressor.py', comment: 'Auto-summarize konteks panjang' },
+      { type: 'file', name: 'memory_manager.py' },
+    ]},
+    { type: 'folder', name: 'api/', open: false, children: [
+      { type: 'file', name: 'server.py', comment: 'FastAPI app entry point' },
+      { type: 'file', name: 'routes/', isFolder: true },
+      { type: 'folder', name: 'routes/', children: [
+        { type: 'file', name: 'chat.py', comment: 'POST /api/v1/chat' },
+        { type: 'file', name: 'agents.py', comment: 'GET /api/v1/agents' },
+        { type: 'file', name: 'sessions.py' },
+        { type: 'file', name: 'models.py' },
+        { type: 'file', name: 'upload.py', comment: 'Upload file ke RAG' },
+      ]},
+      { type: 'file', name: 'websocket.py', comment: 'WS /ws/chat — streaming token' },
+      { type: 'file', name: 'auth.py', comment: 'JWT middleware' },
+      { type: 'file', name: 'middleware.py', comment: 'Rate limiting, logging' },
+    ]},
+    { type: 'folder', name: 'security/', open: false, children: [
+      { type: 'file', name: 'jwt_handler.py' },
+      { type: 'file', name: 'input_sanitizer.py', comment: 'Prompt injection protection' },
+      { type: 'file', name: 'audit_log.py' },
+      { type: 'file', name: 'secrets.py', comment: 'Env-based secrets manager' },
+    ]},
+  ]},
+
+  { type: 'section', label: '⚙️ Model Layer (Inference)', cls: 'model' },
+  { type: 'folder', name: 'model_layer/', section: 'model', open: true, children: [
+    { type: 'folder', name: 'adapters/', open: true, children: [
+      { type: 'file', name: 'base_adapter.py', comment: 'Interface: complete(), stream(), embed()' },
+      { type: 'file', name: 'ollama_adapter.py', comment: 'Ollama REST API' },
+      { type: 'file', name: 'openai_compat_adapter.py', comment: 'Semua backend /v1/chat/completions' },
+      { type: 'file', name: 'llamacpp_adapter.py', comment: 'llama.cpp HTTP server' },
+      { type: 'file', name: 'vllm_adapter.py', comment: 'vLLM high-throughput' },
+      { type: 'file', name: 'custom_adapter.py', comment: 'Template untuk backend non-standar' },
+    ]},
+    { type: 'folder', name: 'profiles/', open: false, children: [
+      { type: 'file', name: 'reasoning.yaml', comment: 'Qwen2.5-72B / LLaMA 3.3-70B' },
+      { type: 'file', name: 'coding.yaml', comment: 'DeepSeek-Coder / Qwen2.5-Coder' },
+      { type: 'file', name: 'fast.yaml', comment: 'Mistral-7B / Qwen2.5-7B' },
+      { type: 'file', name: 'embedding.yaml', comment: 'nomic-embed-text' },
+    ]},
+    { type: 'file', name: 'model_manager.py', comment: 'Hot-reload, switch model runtime' },
+    { type: 'file', name: 'tokenizer_utils.py' },
+  ]},
+  { type: 'folder', name: 'config/', section: 'model', open: false, children: [
+    { type: 'file', name: 'models.yaml', comment: 'Konfigurasi semua model & backend' },
+    { type: 'file', name: 'agents.yaml', comment: 'Definisi agen & tool yang aktif' },
+    { type: 'file', name: 'server.yaml', comment: 'Port, auth, rate limit' },
+    { type: 'file', name: '.env.example' },
+  ]},
+
+  { type: 'section', label: '📱 Gateway — Mobile (Android & iOS)', cls: 'mobile' },
+  { type: 'folder', name: 'gateway_mobile/', section: 'mobile', open: true, children: [
+    { type: 'folder', name: 'lib/', open: true, comment: '← Flutter shared codebase', children: [
+      { type: 'folder', name: 'core/', open: false, children: [
+        { type: 'file', name: 'api_client.dart', comment: 'REST + WebSocket client' },
+        { type: 'file', name: 'auth_service.dart', comment: 'JWT storage & refresh' },
+        { type: 'file', name: 'websocket_service.dart', comment: 'Token streaming handler' },
+        { type: 'file', name: 'local_db.dart', comment: 'SQLite history cache' },
+      ]},
+      { type: 'folder', name: 'screens/', open: false, children: [
+        { type: 'file', name: 'home_screen.dart', comment: 'Daftar agen' },
+        { type: 'file', name: 'chat_screen.dart', comment: 'Thread percakapan + streaming' },
+        { type: 'file', name: 'agent_detail_screen.dart' },
+        { type: 'file', name: 'settings_screen.dart', comment: 'URL server, token, model' },
+      ]},
+      { type: 'folder', name: 'widgets/', open: false, children: [
+        { type: 'file', name: 'chat_bubble.dart', comment: 'Markdown rendering' },
+        { type: 'file', name: 'tool_trace_card.dart', comment: 'Tampilan tool yang dipanggil' },
+        { type: 'file', name: 'agent_status_indicator.dart' },
+        { type: 'file', name: 'file_attachment_picker.dart' },
+      ]},
+      { type: 'folder', name: 'models/', open: false, children: [
+        { type: 'file', name: 'message.dart' },
+        { type: 'file', name: 'session.dart' },
+        { type: 'file', name: 'agent.dart' },
+      ]},
+      { type: 'file', name: 'main.dart' },
+    ]},
+    { type: 'folder', name: 'android/', open: false, children: [
+      { type: 'file', name: 'AndroidManifest.xml' },
+      { type: 'file', name: 'build.gradle' },
+      { type: 'folder', name: 'src/main/kotlin/', children: [
+        { type: 'file', name: 'MainActivity.kt' },
+        { type: 'file', name: 'NotificationPlugin.kt', comment: 'FCM lokal' },
+        { type: 'file', name: 'BiometricPlugin.kt' },
+      ]},
+    ]},
+    { type: 'folder', name: 'ios/', open: false, children: [
+      { type: 'file', name: 'Info.plist' },
+      { type: 'folder', name: 'Runner/', children: [
+        { type: 'file', name: 'AppDelegate.swift' },
+        { type: 'file', name: 'NotificationService.swift', comment: 'APNs lokal' },
+      ]},
+    ]},
+    { type: 'file', name: 'pubspec.yaml', comment: 'Flutter dependencies' },
+  ]},
+
+  { type: 'section', label: '🖥️ Gateway — Desktop (Win / macOS / Linux)', cls: 'desktop' },
+  { type: 'folder', name: 'gateway_desktop/', section: 'desktop', open: true, children: [
+    { type: 'folder', name: 'src/', open: true, comment: '← Electron + React/TypeScript', children: [
+      { type: 'folder', name: 'main/', open: false, children: [
+        { type: 'file', name: 'main.ts', comment: 'Electron main process entry' },
+        { type: 'file', name: 'ipc_handlers.ts', comment: 'IPC bridge renderer ↔ main' },
+        { type: 'file', name: 'tray_menu.ts', comment: 'System tray icon & menu' },
+        { type: 'file', name: 'auto_updater.ts' },
+      ]},
+      { type: 'folder', name: 'renderer/', open: true, children: [
+        { type: 'folder', name: 'pages/', open: false, children: [
+          { type: 'file', name: 'Chat.tsx', comment: 'Multi-tab conversation' },
+          { type: 'file', name: 'Dashboard.tsx', comment: 'Real-time agent monitoring' },
+          { type: 'file', name: 'AgentManager.tsx', comment: 'CRUD konfigurasi agen' },
+          { type: 'file', name: 'ModelConfig.tsx', comment: 'Switch model, tuning param' },
+          { type: 'file', name: 'KnowledgeBase.tsx', comment: 'Manajemen dokumen RAG' },
+          { type: 'file', name: 'Settings.tsx' },
+        ]},
+        { type: 'folder', name: 'components/', open: false, children: [
+          { type: 'file', name: 'ChatBubble.tsx', comment: 'MD + syntax highlight' },
+          { type: 'file', name: 'ToolTracePanel.tsx', comment: 'Tool execution trace' },
+          { type: 'file', name: 'LogStream.tsx', comment: 'Real-time log dari framework' },
+          { type: 'file', name: 'MemoryViewer.tsx' },
+          { type: 'file', name: 'MetricsCard.tsx', comment: 'Latency, token stats' },
+          { type: 'file', name: 'SplitView.tsx' },
+        ]},
+        { type: 'folder', name: 'services/', open: false, children: [
+          { type: 'file', name: 'api.ts', comment: 'REST client ke framework' },
+          { type: 'file', name: 'websocket.ts', comment: 'Streaming token handler' },
+          { type: 'file', name: 'auth.ts', comment: 'JWT management' },
+        ]},
+        { type: 'file', name: 'App.tsx' },
+        { type: 'file', name: 'router.tsx' },
+      ]},
+    ]},
+    { type: 'file', name: 'package.json' },
+    { type: 'file', name: 'electron-builder.json', comment: 'Build config Win/Mac/Linux' },
+    { type: 'file', name: 'tsconfig.json' },
+  ]},
+
+  { type: 'section', label: '📄 Shared & DevOps', cls: 'shared' },
+  { type: 'folder', name: 'shared/', section: 'shared', open: false, children: [
+    { type: 'file', name: 'api_schema.ts', comment: 'TypeScript types dari API' },
+    { type: 'file', name: 'api_schema.py', comment: 'Pydantic models framework' },
+    { type: 'file', name: 'ws_events.ts', comment: 'WebSocket event types' },
+  ]},
+  { type: 'folder', name: 'scripts/', section: 'shared', open: false, children: [
+    { type: 'file', name: 'start_framework.sh' },
+    { type: 'file', name: 'setup_qdrant.sh', comment: 'Init vector DB lokal' },
+    { type: 'file', name: 'gen_jwt_secret.py' },
+    { type: 'file', name: 'benchmark_model.py' },
+  ]},
+  { type: 'folder', name: 'tests/', section: 'shared', open: false, children: [
+    { type: 'folder', name: 'framework/', children: [
+      { type: 'file', name: 'test_agent_loop.py' },
+      { type: 'file', name: 'test_tool_calling.py' },
+      { type: 'file', name: 'test_memory.py' },
+    ]},
+    { type: 'folder', name: 'model_layer/', children: [
+      { type: 'file', name: 'test_adapters.py' },
+    ]},
+  ]},
+  { type: 'folder', name: 'docs/', section: 'shared', open: false, children: [
+    { type: 'file', name: 'architecture.md' },
+    { type: 'file', name: 'api_reference.md' },
+    { type: 'file', name: 'plugin_guide.md' },
+    { type: 'file', name: 'model_setup.md' },
+  ]},
+  { type: 'file', name: 'README.md', section: 'shared' },
+  { type: 'file', name: 'docker-compose.yml', section: 'shared', comment: 'Framework + Qdrant + Ollama' },
+  { type: 'file', name: 'Makefile', section: 'shared', comment: 'Shortcut dev commands' },
+];
+
+function fileIcon(name) {
+  if (name.endsWith('.py')) return '🐍';
+  if (name.endsWith('.ts') || name.endsWith('.tsx')) return '🔷';
+  if (name.endsWith('.dart')) return '🎯';
+  if (name.endsWith('.yaml') || name.endsWith('.yml')) return '⚙️';
+  if (name.endsWith('.md')) return '📝';
+  if (name.endsWith('.json')) return '📋';
+  if (name.endsWith('.sh')) return '💻';
+  if (name.endsWith('.kt')) return '🔶';
+  if (name.endsWith('.swift')) return '🔸';
+  if (name.endsWith('.env.example') || name.endsWith('.example')) return '🔐';
+  if (name.endsWith('.xml')) return '📄';
+  if (name.endsWith('.plist')) return '📄';
+  if (name.endsWith('Makefile')) return '🔧';
+  return '📄';
+}
+
+function buildNode(item, depth = 0) {
+  if (item.type === 'section') {
+    return `<div class="section-header ${item.cls}" data-section="${item.cls}">${item.label}</div>`;
+  }
+  if (item.type === 'file') {
+    return `<div class="label" style="padding-left:2px">
+      <span class="icon" aria-hidden="true">${fileIcon(item.name)}</span>
+      <span class="file-name">${item.name}</span>
+      ${item.comment ? `<span class="comment"># ${item.comment}</span>` : ''}
+    </div>`;
+  }
+  if (item.type === 'folder') {
+    const open = item.open ? 'open' : '';
+    const children = (item.children || []).map(c => buildNode(c, depth+1)).join('');
+    const badge = item.section ? `<span class="badge ${item.section}">${item.section}</span>` : '';
+    const sec = item.section ? `data-section="${item.section}"` : '';
+    return `<div class="folder ${open}" ${sec} onclick="toggleFolder(event, this)">
+      <div class="label">
+        <span class="chevron">▶</span>
+        <span class="icon" aria-hidden="true">${open ? '📂' : '📁'}</span>
+        <span class="name">${item.name}</span>
+        ${badge}
+        ${item.comment ? `<span class="comment">${item.comment}</span>` : ''}
+      </div>
+      <div class="children ${open ? '' : 'collapsed'}">${children}</div>
+    </div>`;
+  }
+  return '';
+}
+
+document.getElementById('tree').innerHTML = data.map(d => buildNode(d)).join('');
+
+function toggleFolder(e, el) {
+  e.stopPropagation();
+  const isOpen = el.classList.contains('open');
+  el.classList.toggle('open', !isOpen);
+  const ch = el.querySelector(':scope > .children');
+  if (ch) ch.classList.toggle('collapsed', isOpen);
+  const icon = el.querySelector(':scope > .label > .icon');
+  if (icon) icon.textContent = isOpen ? '📁' : '📂';
+}
+
+let allOpen = false;
+function toggleAll() {
+  allOpen = !allOpen;
+  document.querySelectorAll('.folder').forEach(el => {
+    el.classList.toggle('open', allOpen);
+    const ch = el.querySelector(':scope > .children');
+    if (ch) ch.classList.toggle('collapsed', !allOpen);
+    const icon = el.querySelector(':scope > .label > .icon');
+    if (icon) icon.textContent = allOpen ? '📂' : '📁';
+  });
+  document.querySelector('.expand-all').textContent = allOpen ? 'tutup semua' : 'buka semua';
+}
+
+function filterSection(section, tabEl) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+
+  const allItems = document.querySelectorAll('#tree > *');
+  allItems.forEach(el => {
+    if (section === 'all') {
+      el.style.display = '';
+    } else {
+      const sec = el.getAttribute('data-section');
+      el.style.display = (sec === section) ? '' : 'none';
+    }
+  });
+}
+</script>
