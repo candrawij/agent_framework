@@ -20,6 +20,7 @@ from .reflector import Reflector, ReflectionOutcome
 logger = logging.getLogger("framework.loop.agent_loop")
 
 
+
 @dataclass
 class LoopRunResult:
     """Hasil lengkap satu run loop."""
@@ -71,6 +72,7 @@ class AgentLoop:
         supervisor: Optional[Any] = None,   # SupervisorAgent
         memory_manager: Optional[Any] = None,
         model_manager: Optional[Any] = None,  # ModelManager — fallback jika tidak ada supervisor
+        tool_registry: Optional[Any] = None,  # ToolRegistry — Sprint 7
         max_iterations: int = 10,
         on_iteration_callback: Optional[Callable] = None,
     ):
@@ -81,6 +83,7 @@ class AgentLoop:
         self.supervisor = supervisor
         self.memory_manager = memory_manager
         self.model_manager = model_manager
+        self.tool_registry = tool_registry
         self.max_iterations = max_iterations
         self.on_iteration_callback = on_iteration_callback
 
@@ -300,17 +303,30 @@ class AgentLoop:
     def _execute_task(
         self, task: Task, context: Dict, observations: List[Observation]
     ) -> Dict:
-        """Eksekusi satu task — pilih antara tool, agent, atau supervisor."""
+        """
+        Eksekusi satu task dengan ReAct loop:
+        1. Jika task.tool_name langsung → eksekusi tool
+        2. Jika ada model_manager → kirim ke model, parse tool calls dari respons
+           Ulangi hingga model menghasilkan jawaban final (tanpa tool call)
+        3. Fallback ke supervisor jika ada
+        """
         try:
-            # Jika ada tool_name, gunakan executor
+            # --- Eksekusi langsung jika tool_name sudah ditentukan ---
             if task.tool_name:
-                tool_result: ToolExecutionResult = self.executor.execute(
-                    tool_name=task.tool_name,
-                    tool_input={"input": task.input} if not isinstance(task.input, dict) else task.input,
-                )
-                return {"success": tool_result.success, "output": tool_result.output, "error": tool_result.error}
+                if self.tool_registry:
+                    result = self.tool_registry.execute(
+                        task.tool_name,
+                        {"input": task.input} if not isinstance(task.input, dict) else task.input,
+                    )
+                    return {"success": result["success"], "output": result["output"], "error": result.get("error")}
+                else:
+                    tool_result: ToolExecutionResult = self.executor.execute(
+                        tool_name=task.tool_name,
+                        tool_input={"input": task.input} if not isinstance(task.input, dict) else task.input,
+                    )
+                    return {"success": tool_result.success, "output": tool_result.output, "error": tool_result.error}
 
-            # Jika ada agent_name, gunakan registry
+            # --- Supervisor ---
             if task.agent_name and self.supervisor:
                 obs_context = context.copy()
                 obs_context["history"] = [o.to_dict() for o in observations[-3:]]
@@ -319,34 +335,108 @@ class AgentLoop:
                     result = output.execute(str(task.input), obs_context)
                     return {"success": True, "output": result}
 
-            # Fallback: gunakan supervisor
             if self.supervisor:
                 obs_context = context.copy()
                 obs_context["history"] = [o.to_dict() for o in observations[-3:]]
                 output = self.supervisor.execute(str(task.input), obs_context)
                 return {"success": True, "output": output}
 
-            # Fallback: langsung ke ModelManager (Sprint 1b)
-            # Digunakan ketika belum ada supervisor/tool terdaftar
+            # --- ReAct Loop dengan ModelManager + ToolRegistry ---
             if self.model_manager:
-                # Siapkan messages dengan context history jika ada
-                messages = []
+                from framework.tools.tool_call_parser import parse_tool_calls, has_tool_call
+
+                # Siapkan messages awal
+                messages: List[Dict] = []
                 if context.get("messages"):
-                    messages = context["messages"]
+                    messages = list(context["messages"])
                 else:
                     messages = [{"role": "user", "content": str(task.input)}]
 
-                logger.info(f"Task '{task.name}': no tool/supervisor, falling back to model_manager")
-                result = self.model_manager.complete(
-                    messages=messages,
-                    temperature=context.get("temperature", 0.7),
-                )
-                content = result.get("content", "")
-                if content:
-                    return {"success": True, "output": content}
-                return {"success": False, "error": "Model returned empty response", "output": None}
+                # Siapkan system prompt dengan tool descriptions jika ada tool_registry
+                tool_schemas = []
+                known_tool_names = []
+                if self.tool_registry:
+                    tool_schemas = self.tool_registry.get_schemas()
+                    known_tool_names = self.tool_registry.list_names()
 
-            return {"success": False, "error": "Tidak ada executor/supervisor/model_manager tersedia", "output": None}
+                if tool_schemas and not any(m["role"] == "system" for m in messages):
+                    tools_desc = "\n".join(
+                        f"- {s['function']['name']}: {s['function']['description']}"
+                        for s in tool_schemas
+                    )
+                    system_msg = (
+                        "Kamu adalah asisten AI dengan akses ke tools berikut:\n"
+                        f"{tools_desc}\n\n"
+                        "Untuk menggunakan tool, tulis dalam format:\n"
+                        "<tool_call>\n"
+                        '{"name": "nama_tool", "arguments": {"param": "nilai"}}\n'
+                        "</tool_call>\n\n"
+                        "Setelah mendapat hasil tool, gunakan hasilnya untuk menjawab user."
+                    )
+                    messages = [{"role": "system", "content": system_msg}] + messages
+
+                # ReAct loop — maksimal 5 iterasi tool calling
+                tool_trace: List[Dict] = []
+                for react_iter in range(5):
+                    logger.info(f"Task '{task.name}': ReAct iter {react_iter + 1}, messages={len(messages)}")
+
+                    result = self.model_manager.complete(
+                        messages=messages,
+                        temperature=context.get("temperature", 0.7),
+                    )
+                    content = result.get("content", "")
+                    if not content:
+                        return {"success": False, "error": "Model returned empty response", "output": None}
+
+                    # Cek apakah ada tool call
+                    if not (self.tool_registry and has_tool_call(content)):
+                        # Tidak ada tool call → ini jawaban final
+                        logger.info(f"Task '{task.name}': final answer after {react_iter + 1} ReAct iters")
+                        return {"success": True, "output": content, "tool_trace": tool_trace}
+
+                    # Parse tool calls
+                    tool_calls = parse_tool_calls(content, known_tools=known_tool_names)
+                    if not tool_calls:
+                        # Ada indikasi tool call tapi tidak bisa di-parse → anggap final answer
+                        return {"success": True, "output": content, "tool_trace": tool_trace}
+
+                    # Tambahkan respons model ke messages
+                    messages.append({"role": "assistant", "content": content})
+
+                    # Eksekusi semua tool calls dan kumpulkan hasilnya
+                    tool_results_text = []
+                    for tc in tool_calls:
+                        logger.info(f"Executing tool: {tc.tool_name}({tc.arguments})")
+                        exec_result = self.tool_registry.execute(tc.tool_name, tc.arguments)
+
+                        trace_entry = {
+                            "tool": tc.tool_name,
+                            "arguments": tc.arguments,
+                            "success": exec_result["success"],
+                            "output": str(exec_result.get("output", ""))[:500],
+                            "error": exec_result.get("error"),
+                            "duration_ms": exec_result.get("duration_ms"),
+                        }
+                        tool_trace.append(trace_entry)
+
+                        if exec_result["success"]:
+                            tool_results_text.append(
+                                f"Tool '{tc.tool_name}' result: {exec_result['output']}"
+                            )
+                        else:
+                            tool_results_text.append(
+                                f"Tool '{tc.tool_name}' error: {exec_result['error']}"
+                            )
+
+                    # Inject hasil tool ke messages sebagai 'tool' role
+                    tool_result_content = "\n".join(tool_results_text)
+                    messages.append({"role": "user", "content": f"Hasil tool:\n{tool_result_content}\n\nSekarang jawab pertanyaan user berdasarkan hasil di atas."})
+
+                # Jika loop habis, ambil jawaban terakhir
+                final_result = self.model_manager.complete(messages=messages)
+                return {"success": True, "output": final_result.get("content", ""), "tool_trace": tool_trace}
+
+            return {"success": False, "error": "Tidak ada model_manager tersedia", "output": None}
 
         except Exception as e:
             logger.error(f"Task '{task.name}' execution failed: {e}", exc_info=True)

@@ -44,17 +44,28 @@ async def lifespan(app: FastAPI):
         logger.warning(f"ModelManager setup failed (Ollama mungkin belum berjalan): {e}")
         app.state.model_manager = None
 
-    # ===== Setup AgentLoop (opsional) =====
+    # ===== Setup ToolRegistry (Sprint 7) =====
+    try:
+        from framework.tools.tool_registry import create_default_registry
+        tool_registry = create_default_registry()
+        app.state.tool_registry = tool_registry
+        logger.info(f"ToolRegistry ready: {tool_registry.list_names()}")
+    except Exception as e:
+        logger.warning(f"ToolRegistry setup failed: {e}")
+        app.state.tool_registry = None
+
+    # ===== Setup AgentLoop =====
     try:
         from framework.loop.agent_loop import AgentLoop
         app.state.agent_loop = None
         if app.state.model_manager:
             agent_loop = AgentLoop(
                 model_manager=app.state.model_manager,
+                tool_registry=app.state.tool_registry,
                 max_iterations=10
             )
             app.state.agent_loop = agent_loop
-            logger.info("AgentLoop ready with ModelManager")
+            logger.info("AgentLoop ready with ModelManager + ToolRegistry")
         else:
             logger.warning("AgentLoop cannot start: ModelManager is not available")
     except Exception as e:
