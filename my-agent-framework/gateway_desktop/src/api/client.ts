@@ -62,7 +62,8 @@ export class ApiClient {
       temperature?: number;
       signal?: AbortSignal;
       onToken: (token: string) => void;
-      onDone: (fullContent: string, sessionId: string) => void;
+      onToolCall?: (toolCall: any) => void;
+      onDone: (fullContent: string, sessionId: string, toolTrace?: any[]) => void;
       onError: (err: string) => void;
     }
   ): Promise<void> {
@@ -120,9 +121,11 @@ export class ApiClient {
             if (event.type === "token" && event.content) {
               fullContent += event.content;
               options.onToken(event.content);
+            } else if (event.type === "tool_call") {
+              options.onToolCall?.(event);
             } else if (event.type === "done") {
               finalSessionId = event.session_id ?? finalSessionId;
-              options.onDone(event.full_content ?? fullContent, finalSessionId);
+              options.onDone(event.full_content ?? fullContent, finalSessionId, event.tool_trace);
             } else if (event.type === "error") {
               options.onError(event.message ?? "Stream error");
             } else if (event.type === "start" && event.session_id) {

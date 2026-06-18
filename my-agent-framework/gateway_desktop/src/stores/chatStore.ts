@@ -6,6 +6,7 @@ export interface Message {
   content: string;
   isStreaming?: boolean;
   timestamp: Date;
+  tool_trace?: any[];
 }
 
 // Map dari sessionId → daftar pesan

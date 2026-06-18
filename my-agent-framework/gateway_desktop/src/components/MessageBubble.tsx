@@ -5,6 +5,7 @@ import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { Message } from "../stores/chatStore";
+import ToolTrace from "./ToolTrace";
 
 interface Props {
   message: Message;
@@ -86,6 +87,11 @@ export default function MessageBubble({ message }: Props) {
             </ReactMarkdown>
           )}
         </div>
+        {message.tool_trace && message.tool_trace.length > 0 && (
+          <div className="message-tool-trace-wrapper">
+            <ToolTrace trace={message.tool_trace} />
+          </div>
+        )}
         <span className="message-time">{timeStr}</span>
       </div>
     </div>

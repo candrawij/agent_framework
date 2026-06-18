@@ -78,8 +78,17 @@ export default function ChatWindow() {
           setStreaming(true);
           appendToMessage(sid, placeholder.id, token);
         },
-        onDone: (_full, _finalSid) => {
+        onToolCall: (tc) => {
+          setStatus("thinking");
+          const msg = useChatStore.getState().getMessages(sid).find(m => m.id === placeholder.id);
+          const currentTrace = msg?.tool_trace || [];
+          updateMessage(sid, placeholder.id, { tool_trace: [...currentTrace, tc] });
+        },
+        onDone: (_full, _finalSid, finalTrace) => {
           updateMessage(sid, placeholder.id, { isStreaming: false });
+          if (finalTrace && finalTrace.length > 0) {
+            updateMessage(sid, placeholder.id, { tool_trace: finalTrace });
+          }
           updateSessionPreview(sid, content);
           setLoading(false);
           setStreaming(false);

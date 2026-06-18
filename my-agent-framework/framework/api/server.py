@@ -110,9 +110,13 @@ def create_app() -> FastAPI:
 
     # Routers
     app.include_router(chat.router, prefix="/api/v1")
-    app.include_router(agents.router, prefix="/api/v1")
     app.include_router(sessions.router, prefix="/api/v1")
     app.include_router(models.router, prefix="/api/v1")
+    app.include_router(models.router, prefix="/api/v1")
+    
+    # Sprint 7: Tools API
+    from framework.api.routes import tools
+    app.include_router(tools.router, prefix="/api/v1")
     app.include_router(upload.router, prefix="/api/v1")
     app.include_router(ws_router, prefix="/ws")
 
