@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Generate a secure JWT secret and save to .env"""
 import secrets
 import sys

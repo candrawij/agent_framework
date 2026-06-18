@@ -1,6 +1,4 @@
-"""
-framework/agents/__init__.py
-"""
+"""framework/agents package"""
 from .base_agent import BaseAgent
 from .react_agent import ReActAgent
 from .supervisor_agent import SupervisorAgent

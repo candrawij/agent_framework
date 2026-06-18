@@ -1,4 +1,4 @@
-﻿"""
+"""
 test_adapters.py — Test untuk Model Adapters
 
 Refactored dari saki_ai_assistant/tests/test_model_router.py

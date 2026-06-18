@@ -1,4 +1,4 @@
-﻿"""POST /api/v1/chat — Chat endpoint"""
+"""POST /api/v1/chat — Chat endpoint"""
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional

@@ -1,4 +1,4 @@
-﻿"""
+"""
 vllm_adapter.py — Adapter untuk vLLM Inference Server
 
 vLLM menyediakan OpenAI-compatible API dengan throughput tinggi.

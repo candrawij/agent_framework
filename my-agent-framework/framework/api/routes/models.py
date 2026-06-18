@@ -1,4 +1,4 @@
-﻿"""Model management endpoints"""
+"""Model management endpoints"""
 from fastapi import APIRouter
 router = APIRouter(tags=["models"])
 

@@ -1,4 +1,4 @@
-﻿"""
+"""
 server.py — FastAPI Application Entry Point
 
 Entry point untuk API server framework.

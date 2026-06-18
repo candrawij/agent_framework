@@ -1,4 +1,4 @@
-﻿"""
+"""
 middleware.py — Request/Response Middleware
 """
 import time

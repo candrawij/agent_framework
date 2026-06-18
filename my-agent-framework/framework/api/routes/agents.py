@@ -1,4 +1,4 @@
-﻿"""GET /api/v1/agents — Agent management endpoints"""
+"""GET /api/v1/agents — Agent management endpoints"""
 from fastapi import APIRouter
 from typing import List, Dict
 

@@ -1,4 +1,4 @@
-﻿"""Session management endpoints"""
+"""Session management endpoints"""
 from fastapi import APIRouter
 router = APIRouter(tags=["sessions"])
 

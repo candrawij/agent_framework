@@ -1,0 +1,40 @@
+﻿name: gateway_mobile
+description: Mobile gateway for My Agent Framework
+version: 1.0.0+1
+publish_to: "none"
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # HTTP Client
+  http: ^1.2.1
+  # WebSocket
+  web_socket_channel: ^3.0.1
+  # State management
+  provider: ^6.1.2
+  # Local storage
+  shared_preferences: ^2.3.1
+  # UI
+  cupertino_icons: ^1.0.6
+  flutter_markdown: ^0.7.3
+  google_fonts: ^6.2.1
+  # File operations
+  path_provider: ^2.1.3
+  file_picker: ^8.1.2
+  # JSON
+  json_annotation: ^4.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  json_serializable: ^6.8.0
+  build_runner: ^2.4.9
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/

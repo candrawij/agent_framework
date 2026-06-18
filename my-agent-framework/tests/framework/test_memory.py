@@ -1,4 +1,4 @@
-﻿"""test_memory.py — Test untuk Memory System"""
+"""test_memory.py — Test untuk Memory System"""
 import pytest
 from framework.memory.short_term import ShortTermMemory
 from framework.memory.episodic import EpisodicMemory

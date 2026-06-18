@@ -1,4 +1,4 @@
-﻿"""
+"""
 auth.py — JWT Authentication Middleware
 """
 from fastapi import Request, HTTPException

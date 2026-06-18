@@ -1,4 +1,4 @@
-﻿"""
+"""
 custom_adapter.py — Template untuk Custom Model Adapter
 
 Salin dan modifikasi file ini untuk mengintegrasikan

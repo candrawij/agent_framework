@@ -1,1 +1,1 @@
-﻿"""Model layer tests"""
+"""Model layer tests"""

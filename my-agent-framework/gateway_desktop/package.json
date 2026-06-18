@@ -1,0 +1,55 @@
+﻿{
+  "name": "agent-framework-desktop",
+  "version": "1.0.0",
+  "description": "Desktop gateway for My Agent Framework",
+  "main": "electron/main.js",
+  "author": "Framework Team",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "electron": "cross-env NODE_ENV=production electron .",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
+    "package": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0",
+    "zustand": "^4.5.4",
+    "lucide-react": "^0.400.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^31.1.0",
+    "electron-builder": "^24.13.3",
+    "typescript": "^5.4.5",
+    "vite": "^5.3.1",
+    "wait-on": "^8.0.0"
+  },
+  "build": {
+    "appId": "com.framework.desktop",
+    "productName": "Agent Framework Desktop",
+    "directories": {
+      "output": "release"
+    },
+    "files": ["dist/**/*", "electron/**/*"],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

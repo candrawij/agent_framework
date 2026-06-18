@@ -1,4 +1,4 @@
-﻿"""
+"""
 websocket.py — WebSocket untuk Streaming Response
 """
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect

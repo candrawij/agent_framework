@@ -1,4 +1,4 @@
-﻿"""
+"""
 api_schema.py — Pydantic Models untuk API (shared Python side)
 """
 from pydantic import BaseModel

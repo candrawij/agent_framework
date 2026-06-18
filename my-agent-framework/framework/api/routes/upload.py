@@ -1,4 +1,4 @@
-﻿"""File upload endpoint"""
+"""File upload endpoint"""
 from fastapi import APIRouter, UploadFile, File
 router = APIRouter(tags=["upload"])
 

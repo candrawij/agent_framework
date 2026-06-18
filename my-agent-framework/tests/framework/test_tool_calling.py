@@ -1,4 +1,4 @@
-﻿"""
+"""
 test_tool_calling.py — Test untuk Tools dan Plugins
 
 Refactored dari saki_ai_assistant/tests/test_plugins.py

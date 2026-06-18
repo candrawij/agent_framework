@@ -1,4 +1,4 @@
-﻿"""
+"""
 openai_compat_adapter.py — Adapter untuk OpenAI API & Compatible Servers
 
 Mendukung: OpenAI, LocalAI, LM Studio, Groq, Together AI,

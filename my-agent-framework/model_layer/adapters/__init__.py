@@ -1,4 +1,4 @@
-﻿"""model_layer/adapters/__init__.py"""
+"""model_layer/adapters/__init__.py"""
 from .base_adapter import BaseModelAdapter
 from .ollama_adapter import OllamaAdapter, TaskType
 from .openai_compat_adapter import OpenAICompatAdapter

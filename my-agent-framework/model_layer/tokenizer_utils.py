@@ -1,4 +1,4 @@
-﻿"""
+"""
 tokenizer_utils.py — Utilitas Token Counting
 
 Helper functions untuk menghitung token tanpa dependency berat.

@@ -1,4 +1,4 @@
-﻿"""
+"""
 test_agent_loop.py — Test untuk Agent Loop
 
 Refactored dari saki_ai_assistant/tests/test_agents.py

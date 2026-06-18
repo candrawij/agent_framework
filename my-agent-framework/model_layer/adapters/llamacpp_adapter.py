@@ -1,4 +1,4 @@
-﻿"""
+"""
 llamacpp_adapter.py — Adapter untuk llama.cpp Server
 
 Menghubungkan ke llama.cpp HTTP server (llama-server).

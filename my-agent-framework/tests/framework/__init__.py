@@ -1,1 +1,1 @@
-﻿"""Framework tests"""
+"""Framework tests"""
