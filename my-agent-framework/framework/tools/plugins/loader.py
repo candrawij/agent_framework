@@ -1,4 +1,4 @@
-"""
+﻿"""
 loader.py — Plugin Loader & Global Registry
 
 Refactored dari saki_ai_assistant/plugins/loader.py dengan

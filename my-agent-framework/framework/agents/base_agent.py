@@ -109,6 +109,85 @@ class BaseAgent(ABC):
         result = self.execute(message, context)
         yield result
 
+    # ==================== REACT LOOP CONTRACT (Sprint 0) ====================
+    # Method ini memetakan ke fase ReAct loop.
+    # Subclass dapat override untuk perilaku kustom per fase.
+
+    def think(self, goal: str, context: Optional[Dict] = None) -> str:
+        """
+        Fase Think (Plan) — tentukan langkah berikutnya untuk mencapai goal.
+
+        Dipanggil oleh AgentLoop.Planner setiap iterasi.
+        Default: delegasi ke execute(). Override untuk logika planning kustom.
+
+        Args:
+            goal: Goal atau instruksi yang sedang dikerjakan.
+            context: Konteks saat ini (memory, previous observations, dll).
+
+        Returns:
+            Rencana atau keputusan langkah berikutnya sebagai string.
+        """
+        return self.execute(goal, context)
+
+    def act(self, action: str, tool_name: Optional[str] = None, tool_input: Optional[Dict] = None) -> str:
+        """
+        Fase Act — jalankan aksi (panggil tool atau buat output langsung).
+
+        Dipanggil oleh AgentLoop.Executor.
+        Default: jalankan tool jika ada, atau kembalikan action sebagai output.
+
+        Args:
+            action: Deskripsi aksi yang akan diambil.
+            tool_name: Nama tool yang akan dipanggil (opsional).
+            tool_input: Input untuk tool (opsional).
+
+        Returns:
+            Hasil dari aksi sebagai string.
+        """
+        if tool_name:
+            tool = self.get_tool(tool_name)
+            if tool:
+                try:
+                    result = tool.run(**(tool_input or {}))
+                    return str(result)
+                except Exception as e:
+                    return f"[Tool error: {e}]"
+        return action
+
+    def observe(self, action_result: str, context: Optional[Dict] = None) -> str:
+        """
+        Fase Observe — proses hasil aksi menjadi observasi yang berguna.
+
+        Dipanggil oleh AgentLoop.Observer.
+        Default: kembalikan hasil aksi apa adanya.
+
+        Args:
+            action_result: Output dari fase Act.
+            context: Konteks saat ini.
+
+        Returns:
+            Observasi yang telah diproses.
+        """
+        return action_result
+
+    def reflect(self, goal: str, observations: List[str], context: Optional[Dict] = None) -> bool:
+        """
+        Fase Reflect — evaluasi apakah goal sudah tercapai.
+
+        Dipanggil oleh AgentLoop.Reflector.
+        Default: anggap selesai jika sudah ada setidaknya satu observasi.
+        Override untuk logika evaluasi yang lebih canggih.
+
+        Args:
+            goal: Goal awal yang ingin dicapai.
+            observations: List semua observasi yang telah dikumpulkan.
+            context: Konteks saat ini.
+
+        Returns:
+            True jika goal sudah tercapai, False jika perlu iterasi lagi.
+        """
+        return len(observations) > 0
+
     # ==================== TOOL ACCESS ====================
 
     def get_tool(self, tool_name: str) -> Optional[Any]:
