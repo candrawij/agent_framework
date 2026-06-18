@@ -70,6 +70,7 @@ class AgentLoop:
         reflector: Optional[Reflector] = None,
         supervisor: Optional[Any] = None,   # SupervisorAgent
         memory_manager: Optional[Any] = None,
+        model_manager: Optional[Any] = None,  # ModelManager — fallback jika tidak ada supervisor
         max_iterations: int = 10,
         on_iteration_callback: Optional[Callable] = None,
     ):
@@ -79,6 +80,7 @@ class AgentLoop:
         self.reflector = reflector or Reflector()
         self.supervisor = supervisor
         self.memory_manager = memory_manager
+        self.model_manager = model_manager
         self.max_iterations = max_iterations
         self.on_iteration_callback = on_iteration_callback
 
@@ -324,7 +326,27 @@ class AgentLoop:
                 output = self.supervisor.execute(str(task.input), obs_context)
                 return {"success": True, "output": output}
 
-            return {"success": False, "error": "Tidak ada executor/supervisor tersedia", "output": None}
+            # Fallback: langsung ke ModelManager (Sprint 1b)
+            # Digunakan ketika belum ada supervisor/tool terdaftar
+            if self.model_manager:
+                # Siapkan messages dengan context history jika ada
+                messages = []
+                if context.get("messages"):
+                    messages = context["messages"]
+                else:
+                    messages = [{"role": "user", "content": str(task.input)}]
+
+                logger.info(f"Task '{task.name}': no tool/supervisor, falling back to model_manager")
+                result = self.model_manager.complete(
+                    messages=messages,
+                    temperature=context.get("temperature", 0.7),
+                )
+                content = result.get("content", "")
+                if content:
+                    return {"success": True, "output": content}
+                return {"success": False, "error": "Model returned empty response", "output": None}
+
+            return {"success": False, "error": "Tidak ada executor/supervisor/model_manager tersedia", "output": None}
 
         except Exception as e:
             logger.error(f"Task '{task.name}' execution failed: {e}", exc_info=True)

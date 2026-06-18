@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "agent-framework-desktop",
   "version": "1.0.0",
   "description": "Desktop gateway for My Agent Framework",
@@ -14,12 +14,14 @@
     "package": "npm run build && electron-builder"
   },
   "dependencies": {
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "lucide-react": "^0.400.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^9.0.1",
+    "react-syntax-highlighter": "^16.1.1",
     "remark-gfm": "^4.0.0",
-    "zustand": "^4.5.4",
-    "lucide-react": "^0.400.0"
+    "zustand": "^4.5.4"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
@@ -39,7 +41,10 @@
     "directories": {
       "output": "release"
     },
-    "files": ["dist/**/*", "electron/**/*"],
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
     "win": {
       "target": "nsis",
       "icon": "assets/icon.ico"

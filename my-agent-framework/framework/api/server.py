@@ -47,13 +47,16 @@ async def lifespan(app: FastAPI):
     # ===== Setup AgentLoop (opsional) =====
     try:
         from framework.loop.agent_loop import AgentLoop
-        agent_loop = AgentLoop(max_iterations=10)
-        app.state.agent_loop = None  # Set None dulu — AgentLoop butuh model
-        # Wire ModelManager ke AgentLoop jika tersedia
+        app.state.agent_loop = None
         if app.state.model_manager:
-            # AgentLoop bisa di-extend nanti untuk menerima model_manager
+            agent_loop = AgentLoop(
+                model_manager=app.state.model_manager,
+                max_iterations=10
+            )
             app.state.agent_loop = agent_loop
-            logger.info("AgentLoop ready")
+            logger.info("AgentLoop ready with ModelManager")
+        else:
+            logger.warning("AgentLoop cannot start: ModelManager is not available")
     except Exception as e:
         logger.warning(f"AgentLoop setup failed: {e}")
         app.state.agent_loop = None
@@ -107,14 +110,20 @@ def create_app() -> FastAPI:
     @app.get("/health", tags=["system"])
     async def health_check():
         """Health check endpoint — cek apakah model tersambung."""
-        from fastapi import Request
         model_ok = False
         model_name = "none"
         if hasattr(app.state, "model_manager") and app.state.model_manager:
             try:
-                adapters = app.state.model_manager.get_stats()
-                model_ok = True
-                model_name = adapters.get("default", "configured")
+                mm = app.state.model_manager
+                # Ambil model_name dari default adapter
+                default = mm._default_adapter
+                if default and hasattr(default, "model_name"):
+                    model_name = default.model_name
+                    model_ok = True
+                else:
+                    stats = mm.get_stats()
+                    model_name = stats.get("default", "configured")
+                    model_ok = True
             except Exception:
                 pass
         return {
@@ -123,6 +132,7 @@ def create_app() -> FastAPI:
             "model_connected": model_ok,
             "model": model_name,
         }
+
 
     return app
 

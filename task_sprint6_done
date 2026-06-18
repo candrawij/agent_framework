@@ -1,0 +1,264 @@
+# Todo List — Development Roadmap v0.2
+## Custom Multi-Agent Framework
+
+> Sprint 1–5 ✅ Selesai. Sprint aktif dimulai dari Sprint 6.
+
+---
+
+## Sprint 6 — Desktop Gateway ✅ SELESAI
+
+### 6.1 Session Management
+- [x] Tambah `sessionStore.ts` — daftar sessions, active session, CRUD
+- [x] Sidebar upgrade: tampilkan daftar sessions, bisa klik untuk switch
+- [x] ChatWindow: saat session diganti, load history session tersebut
+- [x] API client: tambah `getSessions()`, `deleteSession()`, `createSession()`
+- [x] Backend `/api/v1/sessions` endpoint — pastikan GET/POST/DELETE berfungsi
+
+### 6.2 Streaming Real-Time (SSE / WebSocket)
+- [x] Upgrade `ChatWindow.tsx` — gunakan `/api/v1/chat/stream` (SSE) bukan `/chat` biasa
+- [x] Token muncul karakter per karakter saat diterima
+- [x] Tombol "Stop" hentikan streaming di tengah jalan
+- [x] Status indicator: "Thinking..." saat menunggu, "Responding..." saat streaming
+
+### 6.3 UI/UX Polish
+- [x] Markdown rendering sudah ada (react-markdown) — pastikan code block highlight benar
+- [x] Tambah `react-syntax-highlighter` untuk code block berwarna
+- [x] Timestamp per pesan
+- [x] Auto-scroll ke bawah saat ada pesan baru
+- [x] Copy button di code block
+- [x] Error state UI yang informatif (bukan crash)
+
+### 6.4 Settings
+- [x] Settings modal sudah ada — cek apakah API URL tersimpan di localStorage
+- [x] Tambah pilihan model (fast/reasoning)
+- [x] Tambah slider temperature
+- [x] Connection status indicator di header (hijau/merah)
+
+### 6.5 Testing Sprint 6 ✅ SEMUA PASS
+- [x] Test 1: Basic Chat — response muncul di bubble
+- [x] Test 2: Streaming — teks muncul token per token, Stop berfungsi
+- [x] Test 3: Multi-Session — history A dan B tidak bercampur
+- [x] Test 4: Settings — ubah URL ke salah, error jelas; kembali ke benar, chat berjalan
+
+---
+
+## Sprint 7 — Tool Calling ⏱ 5–7 hari
+
+### 7.1 Tool Infrastructure
+- [ ] `DatetimeTool` — kembalikan waktu sekarang
+- [ ] `CalculatorTool` — evaluasi ekspresi matematika aman
+- [ ] `FileTool` — read/write/list file di sandbox folder
+- [ ] `HttpTool` — GET/POST ke URL eksternal
+- [ ] `ToolRegistry` — registrasi & discovery tools
+- [ ] Wire ToolRegistry ke AgentLoop/Executor
+
+### 7.2 AgentLoop Integration
+- [ ] Executor: parse tool calls dari model output (format JSON)
+- [ ] Executor: eksekusi tool, inject hasil ke context
+- [ ] Multi-tool dalam satu prompt (chaining)
+- [ ] Tool error handling — agent lapor error, tidak crash
+
+### 7.3 API & Frontend
+- [ ] `GET /api/v1/tools` — list tools yang terdaftar
+- [ ] Tool trace di chat UI — tampilkan tool yang dipanggil di sidebar/bubble
+
+### 7.4 Testing Sprint 7
+- [ ] Test 1: Calculator — log tool call, jawaban benar
+- [ ] Test 2: Datetime — waktu aktual, bukan dari model
+- [ ] Test 3: FileTool — file benar-benar terbuat
+- [ ] Test 4: Multi-tool — datetime → file, file berisi timestamp
+- [ ] Test 5: Error handling — file tidak ada → informasi, bukan crash
+
+---
+
+## Sprint 8 — Memory System ⏱ 6–8 hari
+
+### 8.1 Short-Term Memory
+- [ ] Sliding window context (simpan N pesan terakhir)
+- [ ] Auto-trim mendekati batas context length model
+- [ ] Reset saat session dihapus
+
+### 8.2 Long-Term Memory (Qdrant)
+- [ ] Setup Qdrant lokal (via Docker atau embedded)
+- [ ] Embedding model integration (nomic-embed-text via Ollama)
+- [ ] Save/retrieve ringkasan percakapan penting
+- [ ] Semantic retrieval berdasarkan query
+
+### 8.3 Episodic Memory (SQLite)
+- [ ] Schema SQLite untuk catatan lintas sesi
+- [ ] Simpan konteks penting (preferensi user, task sebelumnya)
+- [ ] Retrieve saat sesi baru dimulai
+
+### 8.4 MemoryManager
+- [ ] Orkestrasi Short + Long + Episodic
+- [ ] Auto-decide kapan write vs retrieve
+
+### 8.5 Testing Sprint 8
+- [ ] Test 1: Short-term — nama user diingat dalam satu sesi
+- [ ] Test 2: Context window — 30 pesan, tidak crash, pesan lama masih bisa diakses
+- [ ] Test 3: Cross-session — informasi dari sesi sebelumnya diingat
+- [ ] Test 4: Memory isolation — user A tidak bocor ke user B
+
+---
+
+## Sprint 9 — Plugin SDK ⏱ 4–5 hari
+
+### 9.1 Plugin Interface
+- [ ] `BasePlugin` abstract class — name, description, version, parameters, execute()
+- [ ] `on_load()` hook untuk setup validasi config
+- [ ] `plugin_loader.py` — auto-discovery dari folder `plugins/`
+- [ ] `PluginRegistry` — register, enable, disable plugins
+
+### 9.2 Example Plugins
+- [ ] `WeatherPlugin` (mock/real API)
+- [ ] `SearchPlugin` (Tavily atau DuckDuckGo)
+- [ ] Refactor Sprint 7 tools menggunakan Plugin SDK
+
+### 9.3 API
+- [ ] Plugin muncul di `GET /api/v1/tools`
+- [ ] Endpoint disable/enable plugin
+
+### 9.4 Testing Sprint 9
+- [ ] Test 1: Auto-discovery — tambah file plugin, muncul tanpa ubah core
+- [ ] Test 2: Plugin execution — plugin dipanggil dari chat
+- [ ] Test 3: Plugin disable — disable via config, tidak dipanggil
+- [ ] Test 4: Backward compat — Sprint 7 tools masih lulus semua test
+
+---
+
+## Sprint 10 — Multi-Agent (Supervisor) ⏱ 6–8 hari
+
+### 10.1 Agent Roster
+- [ ] `GeneralAgent` — percakapan umum
+- [ ] `CodingAgent` — tugas pemrograman
+- [ ] `SearchAgent` — riset & pencarian informasi
+- [ ] `MemoryAgent` — operasi memory eksplisit
+
+### 10.2 SupervisorAgent
+- [ ] Intent classification (routing ke agent yang tepat)
+- [ ] Delegation ke sub-agent
+- [ ] Response aggregation
+- [ ] Fallback handler saat sub-agent timeout/error
+
+### 10.3 API & Frontend
+- [ ] `GET /api/v1/agents` — list agents yang terdaftar
+- [ ] Log routing di UI (agent mana yang dipilih)
+
+### 10.4 Testing Sprint 10
+- [ ] Test 1: Routing CodingAgent — kode Python, log menunjukkan CodingAgent
+- [ ] Test 2: Routing SearchAgent — pertanyaan faktual
+- [ ] Test 3: Routing GeneralAgent — chat biasa
+- [ ] Test 4: Ambiguous — kode + penjelasan, response berisi keduanya
+- [ ] Test 5: Agent failure fallback — timeout → respons informatif
+
+---
+
+## Sprint 11 — RAG ⏱ 5–7 hari
+
+### 11.1 Document Pipeline
+- [ ] Document loader (PDF, TXT, MD)
+- [ ] Chunking (split ~512 token)
+- [ ] Embedding via nomic-embed-text (Ollama)
+- [ ] Simpan ke Qdrant (reuse dari Sprint 8)
+
+### 11.2 Retrieval
+- [ ] Query embedding saat ada pertanyaan
+- [ ] Semantic retrieval top-K chunks
+- [ ] Inject chunks ke context prompt
+
+### 11.3 API & Frontend
+- [ ] `POST /api/v1/upload` — upload dokumen ke knowledge base
+- [ ] `DELETE /api/v1/documents/:id` — hapus dokumen
+- [ ] File upload UI di desktop gateway
+
+### 11.4 Testing Sprint 11
+- [ ] Test 1: Basic RAG — jawab dari isi PDF
+- [ ] Test 2: Multi-document — bandingkan dua dokumen
+- [ ] Test 3: Di luar dokumen — model menjawab dari pengetahuan umum
+- [ ] Test 4: Delete — dokumen dihapus, tidak digunakan lagi
+
+---
+
+## Sprint 12 — Workflow Engine + Background Task ⏱ 8–10 hari
+
+### 12.1 Background Task Runner
+- [ ] Task queue async (asyncio atau Celery)
+- [ ] Task berjalan tanpa blokir UI
+- [ ] Task cancellation
+- [ ] Notifikasi ke gateway saat selesai
+
+### 12.2 Workflow Engine
+- [ ] Parser YAML workflow definition
+- [ ] Task graph dengan dependency resolution
+- [ ] Parallel execution untuk step tanpa dependensi
+- [ ] Error recovery — stop di step gagal, lapor jelas
+
+### 12.3 API & Frontend
+- [ ] `POST /api/v1/workflow` — submit workflow
+- [ ] `GET /api/v1/tasks/:id` — cek status task
+- [ ] Progress indicator di UI
+
+### 12.4 Testing Sprint 12
+- [ ] Test 1: Background task — UI tetap responsif, notifikasi saat selesai
+- [ ] Test 2: Workflow YAML — semua step jalan sesuai urutan, file output benar
+- [ ] Test 3: Error recovery — step gagal → berhenti, lapor, step sebelumnya tidak diulang
+
+---
+
+## Sprint 13 — Mobile Gateway ⏱ 6–8 hari
+
+### 13.1 Flutter Setup
+- [ ] Upgrade dari boilerplate ke implementasi lengkap
+- [ ] HTTP client + WebSocket untuk streaming
+- [ ] State management (Riverpod/Provider)
+
+### 13.2 Fitur
+- [ ] Chat dengan streaming token per token
+- [ ] Session management
+- [ ] Tool trace panel
+- [ ] Settings (API URL, model, tema)
+- [ ] Notifikasi background task
+
+### 13.3 Testing Sprint 13
+- [ ] Test 1: Basic Chat (Android device)
+- [ ] Test 2: Basic Chat (iOS device)
+- [ ] Test 3: Koneksi via LAN (lokal tanpa internet)
+- [ ] Test 4: Reconnect otomatis setelah WiFi putus
+- [ ] Test 5: Feature parity dengan Desktop (semua Sprint 6 test lulus)
+
+---
+
+## Sprint 14 — Production Readiness ⏱ 7–10 hari
+
+### 14a Operasional
+- [ ] Structured logging (JSON format, request_id, session_id)
+- [ ] Docker Compose (framework + ollama + qdrant + redis)
+- [ ] Auto-backup Qdrant & SQLite setiap 24 jam (retention 7 hari)
+
+### 14b Observability
+- [ ] Prometheus metrics endpoint (`GET /metrics`)
+- [ ] Grafana dashboard (active sessions, request rate, error rate)
+- [ ] Alert: error rate > 5%, latency > 10s
+
+### 14c Testing Sprint 14
+- [ ] Test 1: Docker Compose — semua service up, chat berfungsi, data persist setelah restart
+- [ ] Test 2: Logging — setiap request punya request_id, error ada stack trace
+- [ ] Test 3: Backup/Restore — backup manual, hapus DB, restore, data kembali
+- [ ] Test 4: Metrics — endpoint Prometheus OK, dashboard Grafana real-time
+
+---
+
+## Definisi Selesai (Project Complete)
+
+- [ ] Chat stabil end-to-end di Desktop dan Mobile
+- [ ] Streaming berjalan tanpa freeze atau data loss
+- [ ] Tool calling menghasilkan aksi nyata
+- [ ] Memory berfungsi dalam satu sesi dan lintas sesi
+- [ ] Plugin dapat ditambahkan tanpa menyentuh core
+- [ ] Multi-agent routing akurasi > 90%
+- [ ] RAG menjawab berdasarkan dokumen diunggah
+- [ ] Background task tidak blokir UI
+- [ ] Workflow engine selesaikan task multi-step otonom
+- [ ] Semua service berjalan via Docker Compose
+- [ ] Logging terstruktur — setiap error dapat ditelusuri
+- [ ] End-to-end test lulus di Desktop dan Mobile

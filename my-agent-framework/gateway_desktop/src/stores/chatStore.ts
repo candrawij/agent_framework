@@ -1,4 +1,4 @@
-﻿import { create } from "zustand";
+import { create } from "zustand";
 
 export interface Message {
   id: string;
@@ -8,44 +8,93 @@ export interface Message {
   timestamp: Date;
 }
 
+// Map dari sessionId → daftar pesan
+type SessionMessages = Record<string, Message[]>;
+
 interface ChatState {
-  messages: Message[];
-  sessionId: string | null;
+  // Per-session messages
+  messagesBySession: SessionMessages;
   isLoading: boolean;
+  isStreaming: boolean;
+  status: "idle" | "thinking" | "responding" | "error";
   error: string | null;
-  addMessage: (msg: Omit<Message, "id" | "timestamp">) => Message;
-  updateMessage: (id: string, updates: Partial<Message>) => void;
-  clearSession: () => void;
+  abortController: AbortController | null;
+
+  // Actions
+  getMessages: (sessionId: string) => Message[];
+  addMessage: (sessionId: string, msg: Omit<Message, "id" | "timestamp">) => Message;
+  updateMessage: (sessionId: string, id: string, updates: Partial<Message>) => void;
+  appendToMessage: (sessionId: string, id: string, chunk: string) => void;
+  clearSession: (sessionId: string) => void;
   setLoading: (v: boolean) => void;
+  setStreaming: (v: boolean) => void;
+  setStatus: (s: ChatState["status"]) => void;
   setError: (e: string | null) => void;
-  setSessionId: (id: string | null) => void;
+  setAbortController: (ctrl: AbortController | null) => void;
+  stopStreaming: () => void;
 }
 
-export const useChatStore = create<ChatState>((set) => ({
-  messages: [],
-  sessionId: null,
+export const useChatStore = create<ChatState>((set, get) => ({
+  messagesBySession: {},
   isLoading: false,
+  isStreaming: false,
+  status: "idle",
   error: null,
+  abortController: null,
 
-  addMessage: (msg) => {
+  getMessages: (sessionId) => get().messagesBySession[sessionId] ?? [],
+
+  addMessage: (sessionId, msg) => {
     const message: Message = {
-      id: Date.now().toString(),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       timestamp: new Date(),
       ...msg,
     };
-    set((s) => ({ messages: [...s.messages, message] }));
+    set((s) => ({
+      messagesBySession: {
+        ...s.messagesBySession,
+        [sessionId]: [...(s.messagesBySession[sessionId] ?? []), message],
+      },
+    }));
     return message;
   },
 
-  updateMessage: (id, updates) =>
+  updateMessage: (sessionId, id, updates) =>
     set((s) => ({
-      messages: s.messages.map((m) => (m.id === id ? { ...m, ...updates } : m)),
+      messagesBySession: {
+        ...s.messagesBySession,
+        [sessionId]: (s.messagesBySession[sessionId] ?? []).map((m) =>
+          m.id === id ? { ...m, ...updates } : m
+        ),
+      },
     })),
 
-  clearSession: () =>
-    set({ messages: [], sessionId: null, error: null, isLoading: false }),
+  appendToMessage: (sessionId, id, chunk) =>
+    set((s) => ({
+      messagesBySession: {
+        ...s.messagesBySession,
+        [sessionId]: (s.messagesBySession[sessionId] ?? []).map((m) =>
+          m.id === id ? { ...m, content: m.content + chunk } : m
+        ),
+      },
+    })),
+
+  clearSession: (sessionId) =>
+    set((s) => {
+      const next = { ...s.messagesBySession };
+      delete next[sessionId];
+      return { messagesBySession: next };
+    }),
 
   setLoading: (isLoading) => set({ isLoading }),
+  setStreaming: (isStreaming) => set({ isStreaming }),
+  setStatus: (status) => set({ status }),
   setError: (error) => set({ error }),
-  setSessionId: (sessionId) => set({ sessionId }),
+  setAbortController: (abortController) => set({ abortController }),
+
+  stopStreaming: () => {
+    const { abortController } = get();
+    abortController?.abort();
+    set({ abortController: null, isLoading: false, isStreaming: false, status: "idle" });
+  },
 }));
